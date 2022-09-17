@@ -1,0 +1,18 @@
+[package]
+name = "timeLapseOBS"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[members]
+members = ["obs-frontend-api-sys"]
+
+[dependencies]
+obs-sys = "0.2"
+obs-wrapper = "0.3"
+dasp = { version = "0.11.0", features = [ "interpolate", "signal", "ring_buffer", "interpolate-linear" ] }
+log = "0.4"
+
+[lib]
+name = "timelapseobs"
+crate-type = ["cdylib"]
