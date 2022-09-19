@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-# [members]
-# members = ["obs-frontend-api-sys"]
+[members]
+members = ["libobs-sys", "libobs-wrapper"]
 
 [dependencies]
-obs-sys = "0.2"
-obs-wrapper = "0.3"
+libobs-sys = {path = "./libobs-sys"}
+libobs-wrapper = {path = "./libobs-wrapper"}
 dasp = { version = "0.11.0", features = [ "interpolate", "signal", "ring_buffer", "interpolate-linear" ] }
 log = "0.4"
 

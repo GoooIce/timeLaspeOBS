@@ -1,1 +1,7 @@
-/target
+\target
+*\target
+nextest
+*.d
+*.rlib
+*.bin
+*.o
