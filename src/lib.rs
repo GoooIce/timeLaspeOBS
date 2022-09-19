@@ -1,123 +1,100 @@
 use std::collections::VecDeque;
 
+use obs_sys::encoder_packet;
+
 use obs_wrapper::{
     log::Logger,
     // Macro for registering modules
     obs_register_module,
     // Macro for creating strings
     obs_string,
+    output::{
+        CreatableOutputContext, EncodedPacketOutput, GetDefaultsOutput, GetNameOutput,
+        GetPropertiesOutput, OutputContext, Outputable, RawVideoOutput, UpdateOutput,
+    },
     // Everything required for modules
     prelude::*,
+    properties::{Properties, TextProp, TextType},
     // Everything required for creating a source
     source::*,
 };
 
 use log::info;
 
-use dasp::{
-    interpolate::linear::Linear,
-    signal::{self, interpolate::Converter, Signal},
-};
+// mod frontend;
+mod audio;
 
-mod frontend;
+// #region TestOutput
+struct TestOutput {}
 
-const RNNOISE_SAMPLE_RATE: f64 = 48000.;
-const WAV_COEFFICIENT: f32 = 32767.0;
-const FRAME_SIZE_SHIFT: usize = 2;
-const FRAME_SIZE: usize = 120 << FRAME_SIZE_SHIFT;
+impl GetNameOutput for TestOutput {
+    fn get_name() -> ObsString {
+        info!("get_name_test_output");
+        obs_string!("Test Output")
+    }
+}
+
+impl UpdateOutput for TestOutput {
+    fn update(&mut self, settings: &mut DataObj) {
+        info!("update_test_output: {:?}", settings.get_json());
+    }
+}
+
+impl GetPropertiesOutput for TestOutput {
+    fn get_properties(&mut self) -> Properties {
+        let mut properties_out = Properties::new();
+        properties_out.add::<TextProp>(
+            obs_string!("path"),
+            obs_string!("TestOutput.FilePath"),
+            TextProp::new(TextType::Default),
+        );
+
+        properties_out
+    }
+}
+
+impl GetDefaultsOutput for TestOutput {
+    fn get_defaults(settings: &mut DataObj) {
+        info!("get_defaults_test_output");
+    }
+}
+
+impl EncodedPacketOutput for TestOutput {
+    fn encoded_packet(&mut self, packet: &mut encoder_packet) {
+        info!("encode_packet_test_output");
+    }
+}
+
+impl Outputable for TestOutput {
+    fn get_id() -> ObsString {
+        info!("get_id_test_output");
+        obs_string!("test_output")
+    }
+
+    // fn get_type() -> ObsString {}
+
+    fn create(context: &mut CreatableOutputContext<'_, Self>, output: OutputContext) -> Self {
+        info!("create_test_output");
+        Self {}
+    }
+    fn start(&mut self) -> bool {
+        info!("start_test_output");
+        true
+    }
+    fn stop(&mut self, _ts: u64) {
+        info!("stop_test_output");
+    }
+}
+
+impl RawVideoOutput for TestOutput {
+    fn raw_video(&mut self, frame: &mut obs_sys::video_data) {
+        info!("raw_test_output")
+    }
+}
+// #endregion
 
 struct TestModule {
     context: ModuleContext,
-}
-
-#[derive(Debug)]
-struct Output {
-    buffer: VecDeque<f32>,
-    last_input: (f32, f32),
-    last_output: (f32, f32),
-}
-
-struct TestSource {
-    output: Output,
-    input: VecDeque<f32>,
-    temp: [f32; FRAME_SIZE],
-    temp_out: [f32; FRAME_SIZE],
-    sample_rate: f64,
-    channels: usize,
-}
-
-impl Sourceable for TestSource {
-    fn get_id() -> ObsString {
-        obs_string!("test_source")
-    }
-    fn get_type() -> SourceType {
-        SourceType::FILTER
-    }
-
-    fn create(create: &mut CreatableSourceContext<Self>, _source: SourceContext) -> Self {
-        let (sample_rate, channels) =
-            create.with_audio(|audio| (audio.output_sample_rate(), audio.output_channels()));
-
-        let _ = Logger::new().init();
-
-        info!("this is a test source create info");
-
-        Self {
-            input: VecDeque::with_capacity(FRAME_SIZE * 3),
-            output: Output {
-                buffer: VecDeque::with_capacity(FRAME_SIZE),
-                last_input: (0., 0.),
-                last_output: (0., 0.),
-            },
-            temp: [0.; FRAME_SIZE],
-            temp_out: [0.; FRAME_SIZE],
-            sample_rate: sample_rate as f64,
-            channels,
-        }
-    }
-}
-
-impl GetNameSource for TestSource {
-    fn get_name() -> ObsString {
-        obs_string!("Test Source")
-    }
-}
-
-impl UpdateSource for TestSource {
-    fn update(&mut self, _settings: &mut DataObj, context: &mut GlobalContext) {
-        let sample_rate = context.with_audio(|audio| audio.output_sample_rate());
-        self.sample_rate = sample_rate as f64;
-    }
-}
-
-impl FilterAudioSource for TestSource {
-    fn filter_audio(&mut self, audio: &mut audio::AudioDataContext) {
-        let data = self;
-        // let input_ring_buffer = &mut data.input;
-        // let output_state = &mut data.output;
-
-        // let temp = &mut data.temp;
-        // let temp_out = &mut data.temp_out;
-
-        // info!(
-        //     "input_ring_buffer===========\r\n{:?}\r\n===========output_state===========\r\n{:?}\r\n===========temp===========\r\n{:?}\r\n===========temp_out===========\r\n{:?}\r\n===========",
-        //     input_ring_buffer, output_state, temp, temp_out
-        // );
-        info!("channels: {:?}", data.channels);
-        info!("active: {:?}", frontend::recording_active());
-
-        if let Some(base) = audio.get_channel_as_mut_slice(0) {
-            for channel in 1..data.channels {
-                let buffer = audio
-                    .get_channel_as_mut_slice(channel)
-                    .expect("Channel count said there was a buffer here.");
-
-                for (output, input) in buffer.iter_mut().zip(base.iter()) {
-                    *output = *input;
-                }
-            }
-        }
-    }
 }
 
 impl Module for TestModule {
@@ -130,13 +107,20 @@ impl Module for TestModule {
     }
 
     fn load(&mut self, load_context: &mut LoadContext) -> bool {
+        let _ = Logger::new().init();
         let source = load_context
-            .create_source_builder::<TestSource>()
+            .create_source_builder::<audio::TestSource>()
             .enable_get_name()
             .enable_filter_audio()
             .build();
 
+        let output = load_context
+            .create_output_builder::<TestOutput>()
+            .enable_get_name()
+            .build();
+
         load_context.register_source(source);
+        load_context.register_output(output);
 
         true
     }

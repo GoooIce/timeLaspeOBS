@@ -1,3 +1,0 @@
-[submodule "obs-frontend-api-sys/obs"]
-	path = obs-frontend-api-sys/obs
-	url = https://github.com/obsproject/obs-studio.git
