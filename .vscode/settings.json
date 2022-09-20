@@ -1,3 +1,5 @@
 {
-  "cSpell.words": ["bindgen"]
+  "cSpell.words": ["bindgen"],
+  "cmake.sourceDirectory": "${workspaceFolder}/libobs-sys/obs",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }
