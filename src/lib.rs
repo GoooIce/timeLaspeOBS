@@ -1,7 +1,4 @@
-use libobs_sys::{
-    self, _bindgen_ty_1, obs_module_t, LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER,
-    LIBOBS_API_PATCH_VER,
-};
+use libobs_sys::{obs_module_t, LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER};
 use libobs_wrapper::log::Logger;
 use log::info;
 
@@ -18,7 +15,6 @@ pub unsafe extern "C" fn obs_module_load() -> bool {
 
 #[no_mangle]
 pub unsafe extern "C" fn obs_module_unload() {
-    // let _ = Logger::new().init();
     info!("test obs module unload");
 }
 
